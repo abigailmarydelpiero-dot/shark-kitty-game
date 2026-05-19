@@ -1,4 +1,4 @@
-import sys, pygame, random
+import sys, pygame, random, thorpy as tp
 
 dt = 0
 class Meat(pygame.sprite.Sprite):
@@ -48,7 +48,7 @@ all_sprites = pygame.sprite.Group()
 
 
 
-speed = [2, 2]
+
 black = '#282828'
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
@@ -59,7 +59,12 @@ def render_text(text, value, color, x, y):
     text_display = my_font.render(text_string, True, color)
     screen.blit(text_display, (x, y)) 
 
+#ui - thorpy
+tp.init(screen, tp.theme_classic)
+my_button = tp.Button("feed")
+my_button.center_on('screen')
 
+updater = my_button.get_updater()
 gold = 0
 age = 0
 happyness = 400
@@ -72,7 +77,9 @@ shark = Sharkitty()
 all_sprites.add(shark)
 #event loop
 while True:
-    for event in pygame.event.get():
+    events = pygame.event.get()
+
+    for event in events:
         if event.type == pygame.QUIT: sys.exit()
     #print (pygame.mouse.get_focused())
         shark.enter_name(event)
@@ -89,7 +96,9 @@ while True:
             if event.button == 1:
                 shark.rect.y =shark.rect_start_pos[1]
                 get_gold = True
-   
+
+    
+
     if happyness <= 0:
         sys.exit()
     
@@ -112,7 +121,9 @@ while True:
     render_text('Happiness: ', happyness, (255, 255, 255), 100 , 150)
     render_text('Name Input: ', user_text, (0, 255, 255), 100, 200)
     render_text('', shark.name, (255, 255, 255), 600, 70)
+    #updater.draw()
     all_sprites.draw(screen)
+    updater.update(events=events) 
     pygame.display.flip()
     dt = clock.tick(60) / 1000
     
