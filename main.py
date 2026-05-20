@@ -47,8 +47,6 @@ my_font = pygame.font.Font("/home/dalek/shark-kitty/assets/fonts/JetBrains_Mono/
 all_sprites = pygame.sprite.Group()
 
 
-
-
 black = '#282828'
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
@@ -59,13 +57,43 @@ def render_text(text, value, color, x, y):
     text_display = my_font.render(text_string, True, color)
     screen.blit(text_display, (x, y)) 
 
+def feed_shark():
+    shark.rect.y -=200 * dt
+    global gold, happyness         
+    gold -= 1
+    meat = Meat(random.randint(50, 300), -20)
+    all_sprites.add(meat)
+    happyness += 10
+
+def wash_shark(event):
+    global happyness 
+    if shark.rect.collidepoint((mx, my)):
+        print("collision")
+        if event.type == pygame.MOUSEMOTION:
+            motion_vector = pygame.math.Vector2(event.rel)
+            if motion_vector.length() > 50:
+                happyness + 1
+
+
+feed_button_xy = (700, 200)
+wash_button_xy = (700, 250)
+
 #ui - thorpy
 tp.init(screen, tp.theme_classic)
-my_button = tp.Button("feed")
-my_button.center_on('screen')
 
-updater = my_button.get_updater()
-gold = 0
+
+feed_button = tp.Button("feed")
+feed_button.center_on(feed_button_xy)
+feed_button.at_unclick = feed_shark
+
+wash_button = tp.Button("wash")
+wash_button.center_on(wash_button_xy)
+
+
+#mode none allows for coustom positioning of buttons
+my_ui_elements = tp.Group([feed_button, wash_button], mode=None)
+updater = my_ui_elements.get_updater()
+gold = 100
 age = 0
 happyness = 400
 user_text = ""
@@ -78,7 +106,7 @@ all_sprites.add(shark)
 #event loop
 while True:
     events = pygame.event.get()
-
+    mx, my = pygame.mouse.get_pos()
     for event in events:
         if event.type == pygame.QUIT: sys.exit()
     #print (pygame.mouse.get_focused())
@@ -86,20 +114,14 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 shark.rect.y -=200 * dt
-                if get_gold:
-                    gold += 1
-                    meat = Meat(random.randint(50, 300), -20)
-                    all_sprites.add(meat)
-                    happyness -= 10
-                    get_gold = False
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 shark.rect.y =shark.rect_start_pos[1]
                 get_gold = True
-
+        wash_button.at_click = wash_shark(event)
     
 
-    if happyness <= 0:
+    if gold <= 0:
         sys.exit()
     
     #gold_text = my_font.render(f"Gold - {gold}", True, (255, 255, 255))
@@ -124,6 +146,9 @@ while True:
     #updater.draw()
     all_sprites.draw(screen)
     updater.update(events=events) 
+
+   
+
     pygame.display.flip()
     dt = clock.tick(60) / 1000
     
