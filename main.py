@@ -1,24 +1,36 @@
 import sys, pygame, random, thorpy as tp
 from my_states import HappyState
 import spritesheet
+from sprite_strip_anim import SpriteStripAnim
 
 dt = 0
 
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.filename = "shark.png"
-        ss = spritesheet.spritesheet(self.filename)
+        self.filename = "pixilart-sprite.png"
         #self.image = pygame.image.load("shark.png").convert_alpha()
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (175, 175) 
-        self.rect_start_pos = self.rect.topleft
+        #self.rect = self.image.get_rect()
+        #self.rect.topleft = (175, 175) 
+        #self.rect_start_pos = self.rect.topleft
         self.sick = False
         self.name = "no name :("
 
         #state
         self.state = HappyState()
-
+        #anim
+        self.FPS = 120
+        self.frames = self.FPS / 12
+        self.strips = [
+            SpriteStripAnim(self.filename, (0,0,32,32), 2, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,0,32,32), 2, 1, True, self.frames)
+        ]
+        self.n = 0
+        self.strips[self.n].iter()
+        self.image = self.strips[self.n].next()
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (175, 175) 
+        self.rect_start_pos = self.rect.topleft
     def enter_name(self, event):
         global user_text
         
@@ -36,6 +48,9 @@ class Sharkitty(pygame.sprite.Sprite):
         # The next state will be the result of the on_event function.
         self.state = self.state.on_event(event)
         #print(self.state)
+    def update(self):
+        self.image = self.strips[self.n].next()
+
 
 class Meat(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -64,6 +79,8 @@ black = '#282828'
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 #pygame.event.set_grab(True)
+
+
 
 def render_text(text, value, color, x, y):
     text_string = f"{text}" + f"{value}" 

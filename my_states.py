@@ -6,6 +6,7 @@ from state import State
 class HappyState(State):
 
     def on_event(self, event):
+        
         if event == 'ignored':
             return SadState()
 
