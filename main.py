@@ -1,18 +1,7 @@
 import sys, pygame, random, thorpy as tp
+from my_states import HappyState
 
 dt = 0
-class Meat(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__() # Initialize the Sprite parent class
-        self.image = pygame.image.load("good_meat.png").convert_alpha()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.speed = 5
-    def update(self):
-        self.rect.y += 200 * dt
-        if self.rect.y >= (shark.rect.topleft[1] + 170):
-            self.kill()
-            global happyness
-            happyness += 50
 
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
@@ -23,6 +12,10 @@ class Sharkitty(pygame.sprite.Sprite):
         self.rect_start_pos = self.rect.topleft
         self.sick = False
         self.name = "no name :("
+
+        #state
+        self.state = HappyState()
+
     def enter_name(self, event):
         global user_text
         
@@ -35,7 +28,24 @@ class Sharkitty(pygame.sprite.Sprite):
                 user_text = ""
             else:
                 user_text += event.unicode
+    def on_event(self, event):
 
+        # The next state will be the result of the on_event function.
+        self.state = self.state.on_event(event)
+        #print(self.state)
+
+class Meat(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__() # Initialize the Sprite parent class
+        self.image = pygame.image.load("good_meat.png").convert_alpha()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.speed = 5
+    def update(self):
+        self.rect.y += 200 * dt
+        if self.rect.y >= (shark.rect.topleft[1] + 170):
+            self.kill()
+            global happyness
+            happyness += 50
 
 
 pygame.init()
@@ -66,13 +76,14 @@ def feed_shark():
     happyness += 10
 
 def wash_shark(event):
-    global happyness 
+    global happyness, gold
     if shark.rect.collidepoint((mx, my)):
-        print("collision")
         if event.type == pygame.MOUSEMOTION:
             motion_vector = pygame.math.Vector2(event.rel)
-            if motion_vector.length() > 50:
-                happyness + 1
+            #print(motion_vector.length())
+            if motion_vector.length() > 20:
+                happyness += 1
+                gold -= 10
 
 
 feed_button_xy = (700, 200)
@@ -124,6 +135,10 @@ while True:
     if gold <= 0:
         sys.exit()
     
+    
+    if happyness <= 4-0:
+        shark.on_event('ignored')
+    
     #gold_text = my_font.render(f"Gold - {gold}", True, (255, 255, 255))
     #happyness_text = my_font.render(f"Happiness - {happyness}", True, (222, 215, 11))
     
@@ -142,6 +157,7 @@ while True:
     render_text('Gold: ', gold, (255, 255, 0), 100, 100)
     render_text('Happiness: ', happyness, (255, 255, 255), 100 , 150)
     render_text('Name Input: ', user_text, (0, 255, 255), 100, 200)
+    render_text('State: ', shark.state, (0, 255, 255), 100, 250)
     render_text('', shark.name, (255, 255, 255), 600, 70)
     #updater.draw()
     all_sprites.draw(screen)
