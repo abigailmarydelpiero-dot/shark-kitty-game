@@ -1,12 +1,15 @@
 import sys, pygame, random, thorpy as tp
 from my_states import HappyState
+import spritesheet
 
 dt = 0
 
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load("shark.png").convert_alpha()
+        self.filename = "shark.png"
+        ss = spritesheet.spritesheet(self.filename)
+        #self.image = pygame.image.load("shark.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.topleft = (175, 175) 
         self.rect_start_pos = self.rect.topleft
@@ -75,15 +78,18 @@ def feed_shark():
     all_sprites.add(meat)
     happyness += 10
 
+def wash_state():
+    global wash_yesno
+    wash_yesno = not wash_yesno
+
 def wash_shark(event):
-    global happyness, gold
+    global happyness
     if shark.rect.collidepoint((mx, my)):
         if event.type == pygame.MOUSEMOTION:
             motion_vector = pygame.math.Vector2(event.rel)
             #print(motion_vector.length())
             if motion_vector.length() > 20:
                 happyness += 1
-                gold -= 10
 
 
 feed_button_xy = (700, 200)
@@ -99,6 +105,7 @@ feed_button.at_unclick = feed_shark
 
 wash_button = tp.Button("wash")
 wash_button.center_on(wash_button_xy)
+wash_button.at_unclick = wash_state
 
 
 #mode none allows for coustom positioning of buttons
@@ -109,6 +116,7 @@ age = 0
 happyness = 400
 user_text = ""
 get_gold = True
+wash_yesno = False
 
 #meat = Meat(random.randint(100, 200), 100)
 #all_sprites.add(meat)
@@ -129,9 +137,10 @@ while True:
             if event.button == 1:
                 shark.rect.y =shark.rect_start_pos[1]
                 get_gold = True
-        wash_button.at_click = wash_shark(event)
+        if wash_yesno:
+            wash_shark(event)
     
-
+    
     if gold <= 0:
         sys.exit()
     
@@ -154,10 +163,10 @@ while True:
     #screen.blit(Sharkitty.image, Sharkitty.rect)
     #screen.blit(gold_text, (100, 100)) 
     #screen.blit(happyness_text, (100, 200)) 
-    render_text('Gold: ', gold, (255, 255, 0), 100, 100)
-    render_text('Happiness: ', happyness, (255, 255, 255), 100 , 150)
-    render_text('Name Input: ', user_text, (0, 255, 255), 100, 200)
-    render_text('State: ', shark.state, (0, 255, 255), 100, 250)
+    render_text('Gold: ', gold, (255, 255, 0), 0, 100)
+    render_text('Happiness: ', happyness, (255, 255, 255), 0 , 150)
+    render_text('Name Input: ', user_text, (0, 255, 255), 0, 200)
+    render_text('State: ', shark.state, (0, 255, 255), 0, 250)
     render_text('', shark.name, (255, 255, 255), 600, 70)
     #updater.draw()
     all_sprites.draw(screen)
