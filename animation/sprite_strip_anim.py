@@ -1,4 +1,4 @@
-import spritesheet
+import animation.spritesheet as spritesheet
 
 class SpriteStripAnim(object):
     """sprite strip animator

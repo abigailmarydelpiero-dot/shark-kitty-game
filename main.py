@@ -1,14 +1,14 @@
 import sys, pygame, random, thorpy as tp
-from my_states import HappyState
-import spritesheet
-from sprite_strip_anim import SpriteStripAnim
+from state_machine.my_states import HappyState
+import animation.spritesheet as spritesheet
+from animation.sprite_strip_anim import SpriteStripAnim
 
 dt = 0
 
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.filename = "pixilart-sprite.png"
+        self.filename = "/home/dalek/shark-kitty/assets/images/pixilart-sprite.png"
         #self.image = pygame.image.load("shark.png").convert_alpha()
         #self.rect = self.image.get_rect()
         #self.rect.topleft = (175, 175) 
@@ -20,16 +20,16 @@ class Sharkitty(pygame.sprite.Sprite):
         self.state = HappyState()
         #anim
         self.FPS = 120
-        self.frames = self.FPS / 12
+        self.frames = self.FPS / 6
         self.strips = [
-            SpriteStripAnim(self.filename, (0,0,32,32), 2, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,0,32,32), 2, 1, True, self.frames)
+            SpriteStripAnim(self.filename, (0,0,320,320), 2, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,0,320,320), 2, 1, True, self.frames)
         ]
         self.n = 0
         self.strips[self.n].iter()
         self.image = self.strips[self.n].next()
         self.rect = self.image.get_rect()
-        self.rect.topleft = (175, 175) 
+        self.rect.topleft = (205, 175) 
         self.rect_start_pos = self.rect.topleft
     def enter_name(self, event):
         global user_text
@@ -55,7 +55,7 @@ class Sharkitty(pygame.sprite.Sprite):
 class Meat(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__() # Initialize the Sprite parent class
-        self.image = pygame.image.load("good_meat.png").convert_alpha()
+        self.image = pygame.image.load("/home/dalek/shark-kitty/assets/images/good_meat.png").convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = 5
     def update(self):

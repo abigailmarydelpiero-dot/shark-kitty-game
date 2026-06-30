@@ -1,6 +1,6 @@
 # my_states.py
 
-from state import State
+from state_machine.state import State
 
 # Start of our states
 class HappyState(State):
