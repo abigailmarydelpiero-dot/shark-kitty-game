@@ -9,16 +9,21 @@ class HappyState(State):
         
         if event == 'ignored':
             return SadState()
-
+        elif event == 'beingfed':
+            return FoodState()
+        elif event == 'sick':
+            return SickState()
         return self
 
-
-class HungryState(State):
+class UwuState(State):
 
     def on_event(self, event):
         if event == 'fed':
             return HappyState()
-
+        elif event == 'beingfed':
+            return FoodState()
+        elif event == 'sick':
+            return SickState()
         return self
     
 class SadState(State):
@@ -26,6 +31,36 @@ class SadState(State):
     def on_event(self, event):
         if event == 'fed':
             return HappyState()
+        elif event == 'sick':
+            return SickState()
+        return self
+
+    
+class DirtState(State):
+
+    def on_event(self, event):
+        if event == 'fed':
+            return HappyState()
+        elif event == 'sick':
+            return SickState()
+        return self
+    
+class SickState(State):
+
+    def on_event(self, event):
+        if event == 'fed':
+            return HappyState()
 
         return self
+    
+class FoodState(State):
+
+    def on_event(self, event):
+        if event == 'fed':
+            return HappyState()
+
+        return self
+    
+
+
 # End of our states.

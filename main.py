@@ -8,12 +8,11 @@ dt = 0
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.filename = "/home/dalek/shark-kitty/assets/images/pixilart-sprite.png"
+        self.filename = "/home/dalek/shark-kitty/assets/images/shark1.png"
         #self.image = pygame.image.load("shark.png").convert_alpha()
         #self.rect = self.image.get_rect()
         #self.rect.topleft = (175, 175) 
         #self.rect_start_pos = self.rect.topleft
-        self.sick = False
         self.name = "no name :("
 
         #state
@@ -22,8 +21,12 @@ class Sharkitty(pygame.sprite.Sprite):
         self.FPS = 120
         self.frames = self.FPS / 6
         self.strips = [
-            SpriteStripAnim(self.filename, (0,0,320,320), 2, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,0,320,320), 2, 1, True, self.frames)
+            SpriteStripAnim(self.filename, (0,0,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,32,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,64,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,96,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,128,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,160,32,32), 1, 1, True, self.frames)
         ]
         self.n = 0
         self.strips[self.n].iter()
@@ -31,6 +34,10 @@ class Sharkitty(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.topleft = (205, 175) 
         self.rect_start_pos = self.rect.topleft
+    def change_animation(self, new_strip_index):
+        if self.n != new_strip_index:
+            self.n = new_strip_index
+            self.strips[self.n].iter() #reset frame to 0
     def enter_name(self, event):
         global user_text
         
@@ -49,21 +56,40 @@ class Sharkitty(pygame.sprite.Sprite):
         self.state = self.state.on_event(event)
         #print(self.state)
     def update(self):
-        self.image = self.strips[self.n].next()
+        
+        state_name = str(self.state)
+        
+        if state_name == "HappyState":
+            self.change_animation(0)
+        elif state_name == "UwuState":
+            self.change_animation(1)
+        elif state_name == "SadState":
+            self.change_animation(2)
+        elif state_name == "DirtState":
+            self.change_animation(3)
+        elif state_name == "SickState":
+            self.change_animation(4)
+        elif state_name == "FoodState":
+            self.change_animation(5)
 
+        self.image = self.strips[self.n].next()
 
 class Meat(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__() # Initialize the Sprite parent class
         self.image = pygame.image.load("/home/dalek/shark-kitty/assets/images/good_meat.png").convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.speed = 5
+        #self.speed = 5
+        self.dy = 40
+        self.grv = 8
     def update(self):
-        self.rect.y += 200 * dt
-        if self.rect.y >= (shark.rect.topleft[1] + 170):
+        self.dy += self.grv
+        self.rect.y += self.dy * dt
+        if self.rect.y >= (shark.rect.topleft[1] + 20):
             self.kill()
             global happyness
             happyness += 50
+            shark.on_event('fed')
 
 
 pygame.init()
@@ -74,13 +100,15 @@ my_font = pygame.font.Font("/home/dalek/shark-kitty/assets/fonts/JetBrains_Mono/
 
 all_sprites = pygame.sprite.Group()
 
+pygame.display.set_caption('Sharkitty')
 
 black = '#282828'
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 #pygame.event.set_grab(True)
 
-
+fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
+pygame.display.set_icon(fish_image)
 
 def render_text(text, value, color, x, y):
     text_string = f"{text}" + f"{value}" 
@@ -88,12 +116,13 @@ def render_text(text, value, color, x, y):
     screen.blit(text_display, (x, y)) 
 
 def feed_shark():
+    shark.on_event('beingfed')
     shark.rect.y -=200 * dt
     global gold, happyness         
     gold -= 1
-    meat = Meat(random.randint(50, 300), -20)
+    meat = Meat(random.randint(50, 300), -200)
     all_sprites.add(meat)
-    happyness += 10
+    
 
 def wash_state():
     global wash_yesno
@@ -149,28 +178,24 @@ while True:
         shark.enter_name(event)
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                shark.rect.y -=200 * dt
+                pass
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                shark.rect.y =shark.rect_start_pos[1]
                 get_gold = True
         if wash_yesno:
             wash_shark(event)
-    
+
     
     if gold <= 0:
         sys.exit()
     
     
-    if happyness <= 4-0:
+    if not pygame.display.get_active():
         shark.on_event('ignored')
-    
-    #gold_text = my_font.render(f"Gold - {gold}", True, (255, 255, 255))
-    #happyness_text = my_font.render(f"Happiness - {happyness}", True, (222, 215, 11))
-    
+        print('fu')
 
-    if (random.randint(0,100) == 1):
-            shark_sick = True
+    if (random.randint(0,10000) == 1):
+            shark.on_event('sick')
 
             #screen.blit(sick, sick_rect)
     all_sprites.update() 
