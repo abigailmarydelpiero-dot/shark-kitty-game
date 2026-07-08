@@ -1,4 +1,4 @@
-import sys, pygame, random, thorpy as tp
+import sys, pygame, random, math, thorpy as tp
 from state_machine.my_states import HappyState
 import animation.spritesheet as spritesheet
 from animation.sprite_strip_anim import SpriteStripAnim
@@ -8,7 +8,7 @@ dt = 0
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.filename = "/home/dalek/shark-kitty/assets/images/shark1.png"
+        self.filename = "assets/images/shark1.png"
         #self.image = pygame.image.load("shark.png").convert_alpha()
         #self.rect = self.image.get_rect()
         #self.rect.topleft = (175, 175) 
@@ -31,6 +31,8 @@ class Sharkitty(pygame.sprite.Sprite):
         self.n = 0
         self.strips[self.n].iter()
         self.image = self.strips[self.n].next()
+
+        #sprite box
         self.rect = self.image.get_rect()
         self.rect.topleft = (205, 175) 
         self.rect_start_pos = self.rect.topleft
@@ -77,7 +79,7 @@ class Sharkitty(pygame.sprite.Sprite):
 class Meat(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__() # Initialize the Sprite parent class
-        self.image = pygame.image.load("/home/dalek/shark-kitty/assets/images/good_meat.png").convert_alpha()
+        self.image = pygame.image.load("assets/images/good_meat.png").convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
         #self.speed = 5
         self.dy = 40
@@ -91,7 +93,29 @@ class Meat(pygame.sprite.Sprite):
             happyness += 50
             shark.on_event('fed')
 
-
+class Tiles(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.img = pygame.image.load("assets/images/pixil-frame-0(1).png").convert()
+        self.offset_spd = 60
+        self.mvn_offset = 0
+    def moveTiles(self, dt):
+        self.mvn_offset += self.offset_spd * dt
+        if self.mvn_offset >= 320:
+            self.mvn_offset = 0
+    def tileBackground(self, screen: pygame.display) -> None:
+        screenWidth, screenHeight = screen.get_size()
+        imageWidth, imageHeight = self.img.get_size()
+        
+        # Calculate how many tiles we need to draw in x axis and y axis
+        tilesX = math.ceil(screenWidth / imageWidth)
+        tilesY = math.ceil(screenHeight / imageHeight)
+        
+        # Loop over both and blit accordingly
+        for x in range(tilesX + 1):
+            for y in range(tilesY):
+                screen.blit(self.img, ((x * imageWidth - self.mvn_offset), y * imageHeight) )
+        
 pygame.init()
 
 size = width, height = 800, 600
@@ -117,10 +141,10 @@ def render_text(text, value, color, x, y):
 
 def feed_shark():
     shark.on_event('beingfed')
-    shark.rect.y -=200 * dt
+    #shark.rect.y -=200 * dt
     global gold, happyness         
     gold -= 1
-    meat = Meat(random.randint(50, 300), -200)
+    meat = Meat(random.randint(250, 300), -200)
     all_sprites.add(meat)
     
 
@@ -154,21 +178,23 @@ wash_button.center_on(wash_button_xy)
 wash_button.at_unclick = wash_state
 
 
-#mode none allows for coustom positioning of buttons
+#mode none allows for costom positioning of buttons
 my_ui_elements = tp.Group([feed_button, wash_button], mode=None)
 updater = my_ui_elements.get_updater()
+
+#beginning varibles
 gold = 100
 age = 0
 happyness = 400
 user_text = ""
-get_gold = True
 wash_yesno = False
 
-#meat = Meat(random.randint(100, 200), 100)
-#all_sprites.add(meat)
+
 shark = Sharkitty()
 all_sprites.add(shark)
-#event loop
+
+tiles = Tiles()
+
 while True:
     events = pygame.event.get()
     mx, my = pygame.mouse.get_pos()
@@ -181,7 +207,8 @@ while True:
                 pass
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                get_gold = True
+                #click ig
+                pass
         if wash_yesno:
             wash_shark(event)
 
@@ -190,17 +217,19 @@ while True:
         sys.exit()
     
     
-    if not pygame.display.get_active():
-        shark.on_event('ignored')
-        print('fu')
+   
 
     if (random.randint(0,10000) == 1):
             shark.on_event('sick')
-
+            
             #screen.blit(sick, sick_rect)
     all_sprites.update() 
     #Sharkitty.update()
-    screen.fill(black)
+    #screen.fill(black)
+    #tiles
+    tiles.moveTiles(dt)
+    tiles.tileBackground(screen)
+    
 
     #screen.blit(Sharkitty.image, Sharkitty.rect)
     #screen.blit(gold_text, (100, 100)) 
@@ -210,6 +239,8 @@ while True:
     render_text('Name Input: ', user_text, (0, 255, 255), 0, 200)
     render_text('State: ', shark.state, (0, 255, 255), 0, 250)
     render_text('', shark.name, (255, 255, 255), 600, 70)
+
+    
     #updater.draw()
     all_sprites.draw(screen)
     updater.update(events=events) 
