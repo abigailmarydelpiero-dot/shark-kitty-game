@@ -2,7 +2,6 @@ import sys, pygame, random, math, thorpy as tp
 from state_machine.my_states import HappyState
 import animation.spritesheet as spritesheet
 from animation.sprite_strip_anim import SpriteStripAnim
-
 dt = 0
 
 class Sharkitty(pygame.sprite.Sprite):
@@ -13,7 +12,7 @@ class Sharkitty(pygame.sprite.Sprite):
         #self.rect = self.image.get_rect()
         #self.rect.topleft = (175, 175) 
         #self.rect_start_pos = self.rect.topleft
-        self.name = "no name :("
+        self.name = "no name :["
 
         #state
         self.state = HappyState()
@@ -21,11 +20,11 @@ class Sharkitty(pygame.sprite.Sprite):
         self.FPS = 120
         self.frames = self.FPS / 6
         self.strips = [
-            SpriteStripAnim(self.filename, (0,0,32,32), 1, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,32,32,32), 1, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,64,32,32), 1, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,96,32,32), 1, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,128,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,0,32,32), 2, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,32,32,32), 2, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,64,32,32), 2, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,96,32,32), 2, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,128,32,32), 2, 1, True, self.frames),
             SpriteStripAnim(self.filename, (0,160,32,32), 1, 1, True, self.frames)
         ]
         self.n = 0
@@ -34,24 +33,28 @@ class Sharkitty(pygame.sprite.Sprite):
 
         #sprite box
         self.rect = self.image.get_rect()
-        self.rect.topleft = (205, 175) 
+        self.rect.topleft = (350, 175) 
         self.rect_start_pos = self.rect.topleft
     def change_animation(self, new_strip_index):
         if self.n != new_strip_index:
             self.n = new_strip_index
             self.strips[self.n].iter() #reset frame to 0
     def enter_name(self, event):
-        global user_text
+        global user_text, entering_name
         
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                user_text = user_text[:-1]
-            elif event.key == pygame.K_RETURN:
-                print(f"Submitted Text: {user_text}")
-                self.name = user_text
-                user_text = ""
-            else:
-                user_text += event.unicode
+        if entering_name:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE:
+                    user_text = user_text[:-1]
+                elif event.key == pygame.K_RETURN:
+                    print(f"Submitted Text: {user_text}")
+                    self.name = user_text
+                    user_text = ""
+                    entering_name = False
+                    top_panel.set_title(str(shark.name))
+                    
+                else:
+                    user_text += event.unicode
     def on_event(self, event):
 
         # The next state will be the result of the on_event function.
@@ -120,7 +123,7 @@ pygame.init()
 
 size = width, height = 800, 600
 
-my_font = pygame.font.Font("/home/dalek/shark-kitty/assets/fonts/JetBrains_Mono/JetBrainsMono-VariableFont_wght.ttf", 30)
+my_font = pygame.font.Font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
 
 all_sprites = pygame.sprite.Group()
 
@@ -130,6 +133,7 @@ black = '#282828'
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 #pygame.event.set_grab(True)
+
 
 fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
 pygame.display.set_icon(fish_image)
@@ -144,13 +148,17 @@ def feed_shark():
     #shark.rect.y -=200 * dt
     global gold, happyness         
     gold -= 1
-    meat = Meat(random.randint(250, 300), -200)
+    meat = Meat(random.randint(400, 440), -200)
     all_sprites.add(meat)
     
 
 def wash_state():
     global wash_yesno
     wash_yesno = not wash_yesno
+
+def name_enter():
+    global entering_name
+    entering_name = not entering_name
 
 def wash_shark(event):
     global happyness
@@ -162,25 +170,10 @@ def wash_shark(event):
                 happyness += 1
 
 
-feed_button_xy = (700, 200)
-wash_button_xy = (700, 250)
+right_menu_xy = (200, 350)
+top_menu_xy = (200, 100)
 
-#ui - thorpy
-tp.init(screen, tp.theme_classic)
-
-
-feed_button = tp.Button("feed")
-feed_button.center_on(feed_button_xy)
-feed_button.at_unclick = feed_shark
-
-wash_button = tp.Button("wash")
-wash_button.center_on(wash_button_xy)
-wash_button.at_unclick = wash_state
-
-
-#mode none allows for costom positioning of buttons
-my_ui_elements = tp.Group([feed_button, wash_button], mode=None)
-updater = my_ui_elements.get_updater()
+tp.set_default_font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
 
 #beginning varibles
 gold = 100
@@ -188,12 +181,65 @@ age = 0
 happyness = 400
 user_text = ""
 wash_yesno = False
-
+entering_name = False
 
 shark = Sharkitty()
+
+#ui - thorpy
+tp.init(screen, tp.theme_text_dark)
+
+#set elements radius to 40% of their own height, except for boxes
+tp.set_style_attr("radius", 0.4, exceptions_cls=[tp.Box])
+
+#set elements background as a color gradient
+#new_color = ((100,100,255), (220,220,220), "h") #(from, to, 'h' 'v', 'r'(radial) or 'q'(square))
+#tp.set_style_attr("bck_color", "#282828", exceptions_cls=[tp.Box, tp.Text])
+#new_color_pressed = ((220,220,220), (100,100,255) , "h")
+tp.set_style_attr("bck_color", ((40,40,40), "h"), None, exceptions_cls=[ tp.Text])
+
+feed_button = tp.Button("feed")
+#feed_button.center_on(feed_button_xy)
+feed_button.at_unclick = feed_shark
+wash_text = tp.Text("wash")
+wash_button = tp.SwitchButton(False, "auto", (20,40))
+wash_button.set_style_attr("bck_color", (50, 60, 60)) 
+wash_button.set_style_attr("radius", wash_button.rect.h//100)
+wash_button.set_size((50, 20))
+
+#wash_button.center_on(wash_button_xy)
+wash_button.at_unclick = wash_state
+wash_full = tp.Box([wash_text, wash_button])
+wash_full.sort_children("h",margins=(10, 10))
+print(f"style: {wash_button.get_current_style()}")
+name_button = tp.Button("name")
+#name_button.center_on(name_button_xy)
+name_button.at_unclick = name_enter
+
+gold_text = tp.Text(f"gold {str(gold)}")
+happyness_text = tp.Text(f"happy {str(happyness)}")
+state_text = tp.Text(str(shark.state).replace("State", ""))
+
+right_panel = tp.TitleBox("Menu", [feed_button,wash_full,name_button])
+right_panel.center_on(right_menu_xy)
+right_panel.set_style_attr("radius", right_panel.rect.h//100)
+right_panel.sort_children(margins=(30, 40))
+
+top_panel = tp.TitleBox(str(shark.name), [gold_text, happyness_text, state_text])
+top_panel.center_on(top_menu_xy)
+top_panel.set_style_attr("radius", right_panel.rect.h//100)
+top_panel.sort_children("h",margins=(50, 50))
+#mode none allows for costom positioning of buttons
+my_ui_elements = tp.Group([right_panel, top_panel], mode=None)
+updater = my_ui_elements.get_updater()
+
+
+
+
+
 all_sprites.add(shark)
 
 tiles = Tiles()
+
 
 while True:
     events = pygame.event.get()
@@ -217,7 +263,7 @@ while True:
         sys.exit()
     
     
-   
+    top_panel.sort_children("h",margins=(50, 50))
 
     if (random.randint(0,10000) == 1):
             shark.on_event('sick')
@@ -234,20 +280,23 @@ while True:
     #screen.blit(Sharkitty.image, Sharkitty.rect)
     #screen.blit(gold_text, (100, 100)) 
     #screen.blit(happyness_text, (100, 200)) 
-    render_text('Gold: ', gold, (255, 255, 0), 0, 100)
-    render_text('Happiness: ', happyness, (255, 255, 255), 0 , 150)
-    render_text('Name Input: ', user_text, (0, 255, 255), 0, 200)
+    #render_text('Gold: ', gold, (255, 255, 0), 0, 100)
+    #render_text('Happiness: ', happyness, (255, 255, 255), 0 , 150)
+    render_text('Name Input: ', user_text, (0, 255, 255), 20, 500)
     render_text('State: ', shark.state, (0, 255, 255), 0, 250)
-    render_text('', shark.name, (255, 255, 255), 600, 70)
+    #render_text('', shark.name, (255, 255, 255), 600, 70)
+
 
     
+
+
     #updater.draw()
     all_sprites.draw(screen)
     updater.update(events=events) 
 
-   
+
 
     pygame.display.flip()
     dt = clock.tick(60) / 1000
-    
+
 pygame.quit()
