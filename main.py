@@ -99,7 +99,7 @@ class Meat(pygame.sprite.Sprite):
 class Tiles(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.img = pygame.image.load("assets/images/pixil-frame-0(1).png").convert()
+        self.img = pygame.image.load("assets/images/pixil-frame-0(2).png").convert()
         self.offset_spd = 60
         self.mvn_offset = 0
     def moveTiles(self, dt):
@@ -224,7 +224,7 @@ right_panel.center_on(right_menu_xy)
 right_panel.set_style_attr("radius", right_panel.rect.h//100)
 right_panel.sort_children(margins=(30, 40))
 
-top_panel = tp.TitleBox(str(shark.name), [gold_text, happyness_text, state_text])
+top_panel = tp.TitleBox(str(shark.name), children=[gold_text, happyness_text, state_text])
 top_panel.center_on(top_menu_xy)
 top_panel.set_style_attr("radius", right_panel.rect.h//100)
 top_panel.sort_children("h",margins=(50, 50))
@@ -262,6 +262,9 @@ while True:
     if gold <= 0:
         sys.exit()
     
+    gold_text.set_text(f"gold {str(gold)}")
+    happyness_text.set_text(f"happy {str(happyness)}")
+    state_text.set_text(str(shark.state).replace("State", ""))
     
     top_panel.sort_children("h",margins=(50, 50))
 
