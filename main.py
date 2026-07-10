@@ -1,21 +1,18 @@
 import sys, pygame, random, math, thorpy as tp
-from state_machine.my_states import HappyState
+from state_machine.my_states import SadState
 import animation.spritesheet as spritesheet
 from animation.sprite_strip_anim import SpriteStripAnim
+
 dt = 0
 
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.filename = "assets/images/shark1.png"
-        #self.image = pygame.image.load("shark.png").convert_alpha()
-        #self.rect = self.image.get_rect()
-        #self.rect.topleft = (175, 175) 
-        #self.rect_start_pos = self.rect.topleft
         self.name = "no name :["
 
         #state
-        self.state = HappyState()
+        self.state = SadState()
         #anim
         self.FPS = 120
         self.frames = self.FPS / 6
@@ -25,7 +22,8 @@ class Sharkitty(pygame.sprite.Sprite):
             SpriteStripAnim(self.filename, (0,64,32,32), 2, 1, True, self.frames),
             SpriteStripAnim(self.filename, (0,96,32,32), 2, 1, True, self.frames),
             SpriteStripAnim(self.filename, (0,128,32,32), 2, 1, True, self.frames),
-            SpriteStripAnim(self.filename, (0,160,32,32), 1, 1, True, self.frames)
+            SpriteStripAnim(self.filename, (0,160,32,32), 1, 1, True, self.frames),
+            SpriteStripAnim(self.filename, (0,192,32,32), 2, 1, True, self.frames)
         ]
         self.n = 0
         self.strips[self.n].iter()
@@ -76,6 +74,8 @@ class Sharkitty(pygame.sprite.Sprite):
             self.change_animation(4)
         elif state_name == "FoodState":
             self.change_animation(5)
+        elif state_name == "WorkState":
+            self.change_animation(6)
 
         self.image = self.strips[self.n].next()
 
@@ -135,6 +135,17 @@ clock = pygame.time.Clock()
 #pygame.event.set_grab(True)
 
 
+
+pointer_img = pygame.image.load("assets/images/pixilart-frames/hand2.png").convert_alpha()
+hand_img = pygame.image.load("assets/images/pixilart-frames/hand1.png").convert_alpha()
+sponge_img = pygame.image.load("assets/images/pixilart-frames/sponge.png").convert_alpha()
+hotspot = (20, 10)
+pointer_cursor = pygame.cursors.Cursor(hotspot, pointer_img)
+hand_cursor = pygame.cursors.Cursor(hotspot, hand_img)
+sponge_cursor = pygame.cursors.Cursor(hotspot, sponge_img)
+
+pygame.mouse.set_cursor(pointer_cursor)
+
 fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
 pygame.display.set_icon(fish_image)
 
@@ -144,13 +155,22 @@ def render_text(text, value, color, x, y):
     screen.blit(text_display, (x, y)) 
 
 def feed_shark():
-    shark.on_event('beingfed')
-    #shark.rect.y -=200 * dt
-    global gold, happyness         
+    global gold        
     gold -= 1
-    meat = Meat(random.randint(400, 440), -200)
-    all_sprites.add(meat)
+    print(shark.state)
+    if str(shark.state) != "SickState":
+        shark.on_event('beingfed')
+        meat = Meat(random.randint(400, 440), -200)
+        all_sprites.add(meat)
     
+def cure_shark():
+    shark.on_event('cured')
+    global gold, happyness
+    gold -= 10
+    happyness += 10
+
+def work_shark():
+    shark.on_event('work')
 
 def wash_state():
     global wash_yesno
@@ -161,14 +181,34 @@ def name_enter():
     entering_name = not entering_name
 
 def wash_shark(event):
-    global happyness
-    if shark.rect.collidepoint((mx, my)):
-        if event.type == pygame.MOUSEMOTION:
-            motion_vector = pygame.math.Vector2(event.rel)
-            #print(motion_vector.length())
-            if motion_vector.length() > 20:
-                happyness += 1
+    global happyness, dirt
+    if str(shark.state) == "DirtState":
+        if shark.rect.collidepoint((mx, my)):
+            if event.type == pygame.MOUSEMOTION:
+                motion_vector = pygame.math.Vector2(event.rel)
+                #print(motion_vector.length())
+                if motion_vector.length() > 20:
+                    happyness += 1
+                    dirt -= 1
+        if dirt <= 0:
+            shark.on_event('clean')
+            dirt = 0
 
+def switch_theme():
+    global dtheme, now_color, wcolor, dcolor
+    dtheme = not dtheme
+    
+
+def get_all_elements(element):
+    #flattens a UI element ree into a single list
+    
+    elements = [element]
+
+    #check if children
+    if hasattr(element, "get_children"):
+        for child in element.get_children():
+            elements.extend(get_all_elements(child))
+    return elements
 
 right_menu_xy = (200, 350)
 top_menu_xy = (200, 100)
@@ -178,10 +218,14 @@ tp.set_default_font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.t
 #beginning varibles
 gold = 100
 age = 0
-happyness = 400
+happyness = 1000
 user_text = ""
 wash_yesno = False
 entering_name = False
+dtheme = False
+sad_timer = 75
+happy_timer = 75
+check_timer = 75
 
 shark = Sharkitty()
 
@@ -191,40 +235,51 @@ tp.init(screen, tp.theme_text_dark)
 #set elements radius to 40% of their own height, except for boxes
 tp.set_style_attr("radius", 0.4, exceptions_cls=[tp.Box])
 
-#set elements background as a color gradient
-#new_color = ((100,100,255), (220,220,220), "h") #(from, to, 'h' 'v', 'r'(radial) or 'q'(square))
-#tp.set_style_attr("bck_color", "#282828", exceptions_cls=[tp.Box, tp.Text])
-#new_color_pressed = ((220,220,220), (100,100,255) , "h")
-tp.set_style_attr("bck_color", ((40,40,40), "h"), None, exceptions_cls=[ tp.Text])
+
+box_color = (40, 40, 40)
+text_color = (213, 247, 247)
+
+
+tp.set_style_attr("bck_color", (box_color, "h"), None, exceptions_cls=[ tp.Text])
+tp.set_style_attr("font_color", text_color)
 
 feed_button = tp.Button("feed")
-#feed_button.center_on(feed_button_xy)
 feed_button.at_unclick = feed_shark
+
+work_button = tp.Button("work")
+work_button.at_unclick = work_shark
+
+cure_button = tp.Button("cure")
+cure_button.at_unclick = cure_shark
+
 wash_text = tp.Text("wash")
-wash_button = tp.SwitchButton(False, "auto", (20,40))
+wash_button = tp.SwitchButton(False, "auto", (20,35))
 wash_button.set_style_attr("bck_color", (50, 60, 60)) 
 wash_button.set_style_attr("radius", wash_button.rect.h//100)
 wash_button.set_size((50, 20))
-
-#wash_button.center_on(wash_button_xy)
 wash_button.at_unclick = wash_state
 wash_full = tp.Box([wash_text, wash_button])
 wash_full.sort_children("h",margins=(10, 10))
-print(f"style: {wash_button.get_current_style()}")
+
 name_button = tp.Button("name")
-#name_button.center_on(name_button_xy)
 name_button.at_unclick = name_enter
+
+dark_mode_btn = tp.SwitchButton(False, "auto", (20, 40))
+dark_mode_btn.set_style_attr("bck_color", (50, 60, 60)) 
+dark_mode_btn.set_style_attr("radius", dark_mode_btn.rect.h//100)
+dark_mode_btn.set_size((50, 20))
+dark_mode_btn.at_unclick = switch_theme
 
 gold_text = tp.Text(f"gold {str(gold)}")
 happyness_text = tp.Text(f"happy {str(happyness)}")
 state_text = tp.Text(str(shark.state).replace("State", ""))
 
-right_panel = tp.TitleBox("Menu", [feed_button,wash_full,name_button])
+right_panel = tp.Box([feed_button,wash_full,work_button,cure_button,name_button])
 right_panel.center_on(right_menu_xy)
 right_panel.set_style_attr("radius", right_panel.rect.h//100)
-right_panel.sort_children(margins=(30, 40))
+right_panel.sort_children(margins=(20, 30))
 
-top_panel = tp.TitleBox(str(shark.name), children=[gold_text, happyness_text, state_text])
+top_panel = tp.TitleBox(str(shark.name), children=[gold_text, happyness_text, state_text, dark_mode_btn])
 top_panel.center_on(top_menu_xy)
 top_panel.set_style_attr("radius", right_panel.rect.h//100)
 top_panel.sort_children("h",margins=(50, 50))
@@ -258,24 +313,60 @@ while True:
         if wash_yesno:
             wash_shark(event)
 
-    
-    if gold <= 0:
+    if dtheme:
+        tiles.img = pygame.image.load("assets/images/darkbg.png").convert()
+    else:
+        tiles.img = pygame.image.load("assets/images/pixil-frame-0(2).png").convert()
+
+    hovering_ui = False 
+
+    if gold <= 0 or happyness <= 0:
         sys.exit()
     
-    gold_text.set_text(f"gold {str(gold)}")
-    happyness_text.set_text(f"happy {str(happyness)}")
+
+    if str(shark.state) == "SickState":
+        sad_timer -= 10
+        if sad_timer <= 0:
+            happyness -= 1
+            sad_timer = 75
+    elif str(shark.state) == "SadState":
+        
+        sad_timer -= 1
+        if sad_timer <= 0:
+            happyness -= 1
+            sad_timer = 75
+    elif str(shark.state) == "HappyState":
+        happy_timer -= 1
+        if happy_timer <= 0:
+            happyness += 1
+            happy_timer = 75
+    elif str(shark.state) == "WorkState":
+        check_timer -= 1
+        if check_timer <= 0:
+            happyness -= 10
+            gold += 15
+            check_timer = 75
+
+    gold_text.set_text(f"gold: {str(gold)}")
+    happyness_text.set_text(f"happy: {str(happyness)}")
     state_text.set_text(str(shark.state).replace("State", ""))
     
     top_panel.sort_children("h",margins=(50, 50))
 
-    if (random.randint(0,10000) == 1):
-            shark.on_event('sick')
+    if (random.randint(0,1000) == 1):
+        shark.on_event('sick')
+    elif (random.randint(0,1000) == 1):
+        shark.on_event('dirty')
+        dirt = 50
+
+    if (happyness <= 400):
+        shark.on_event('sad')
+        sad_timer = 100
+
             
-            #screen.blit(sick, sick_rect)
+
     all_sprites.update() 
-    #Sharkitty.update()
-    #screen.fill(black)
-    #tiles
+
     tiles.moveTiles(dt)
     tiles.tileBackground(screen)
     
@@ -286,7 +377,8 @@ while True:
     #render_text('Gold: ', gold, (255, 255, 0), 0, 100)
     #render_text('Happiness: ', happyness, (255, 255, 255), 0 , 150)
     render_text('Name Input: ', user_text, (0, 255, 255), 20, 500)
-    render_text('State: ', shark.state, (0, 255, 255), 0, 250)
+
+    #render_text('State: ', shark.state, (0, 255, 255), 0, 250)
     #render_text('', shark.name, (255, 255, 255), 600, 70)
 
 
@@ -296,6 +388,24 @@ while True:
     #updater.draw()
     all_sprites.draw(screen)
     updater.update(events=events) 
+
+    all_interactive_elements = get_all_elements(right_panel) + get_all_elements(top_panel)
+
+    for element in all_interactive_elements:
+        # Verify the item has a valid coordinate boundary box
+        if hasattr(element, "rect") and element.rect is not None:
+            
+            # Check if the mouse is physically colliding with the button/slider
+            if element.rect.collidepoint((mx,my)):
+                hovering_ui = True
+                break
+
+    if hovering_ui and not wash_yesno:
+        pygame.mouse.set_cursor(hand_cursor)
+    elif wash_yesno:
+        pygame.mouse.set_cursor(sponge_cursor)
+    else:
+        pygame.mouse.set_cursor(pointer_cursor)
 
 
 
