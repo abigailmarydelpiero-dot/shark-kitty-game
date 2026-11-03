@@ -2,14 +2,22 @@ import sys, pygame, random, math, thorpy as tp
 from state_machine.my_states import SadState
 import animation.spritesheet as spritesheet
 from animation.sprite_strip_anim import SpriteStripAnim
-
+from dialogue import DialogueBox
 dt = 0
-
+class Settings:
+    def __init__(self):
+        self.size = self.width, self.height = 800, 600
+        self.my_font = pygame.font.Font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
+    def get_var(self, name: str):
+        #grabs var for other script
+        #none if not found
+        return getattr(self, name, None)
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.filename = "assets/images/shark1.png"
         self.name = "no name :["
+
 
         #state
         self.state = SadState()
@@ -121,16 +129,15 @@ class Tiles(pygame.sprite.Sprite):
         
 pygame.init()
 
-size = width, height = 800, 600
-
-my_font = pygame.font.Font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
+config = Settings()
 
 all_sprites = pygame.sprite.Group()
 
 pygame.display.set_caption('Sharkitty')
 
 black = '#282828'
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode(config.size) #non resizeable screen
+#screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
 clock = pygame.time.Clock()
 #pygame.event.set_grab(True)
 
@@ -151,7 +158,7 @@ pygame.display.set_icon(fish_image)
 
 def render_text(text, value, color, x, y):
     text_string = f"{text}" + f"{value}" 
-    text_display = my_font.render(text_string, True, color)
+    text_display = config.my_font.render(text_string, True, color)
     screen.blit(text_display, (x, y)) 
 
 def feed_shark():
@@ -197,10 +204,10 @@ def wash_shark(event):
 def switch_theme():
     global dtheme, now_color, wcolor, dcolor
     dtheme = not dtheme
-    
 
+#for mouse pointer i think
 def get_all_elements(element):
-    #flattens a UI element ree into a single list
+    #flattens a UI element tree into a single list
     
     elements = [element]
 
@@ -227,7 +234,11 @@ sad_timer = 75
 happy_timer = 75
 check_timer = 75
 
+
 shark = Sharkitty()
+tiles = Tiles()
+dialouge = DialogueBox("hello", 0,500)
+
 
 #ui - thorpy
 tp.init(screen, tp.theme_text_dark)
@@ -283,17 +294,18 @@ top_panel = tp.TitleBox(str(shark.name), children=[gold_text, happyness_text, st
 top_panel.center_on(top_menu_xy)
 top_panel.set_style_attr("radius", right_panel.rect.h//100)
 top_panel.sort_children("h",margins=(50, 50))
+
+
+
 #mode none allows for costom positioning of buttons
 my_ui_elements = tp.Group([right_panel, top_panel], mode=None)
+
 updater = my_ui_elements.get_updater()
-
-
-
 
 
 all_sprites.add(shark)
 
-tiles = Tiles()
+
 
 
 while True:
@@ -305,7 +317,18 @@ while True:
         shark.enter_name(event)
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                pass
+                
+
+                #TEST REMOVE LATER111111111111111111111111
+
+
+
+
+                dialouge.render_text(str(random.randint(0,10000)))
+                
+                
+
+
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 #click ig
@@ -353,9 +376,9 @@ while True:
     
     top_panel.sort_children("h",margins=(50, 50))
 
-    if (random.randint(0,1000) == 1):
+    if (random.randint(0,10000) == 1):
         shark.on_event('sick')
-    elif (random.randint(0,1000) == 1):
+    elif (random.randint(0,5000) == 1):
         shark.on_event('dirty')
         dirt = 50
 
@@ -388,6 +411,8 @@ while True:
     #updater.draw()
     all_sprites.draw(screen)
     updater.update(events=events) 
+
+    screen.blit(dialouge.image, dialouge.rect)  
 
     all_interactive_elements = get_all_elements(right_panel) + get_all_elements(top_panel)
 
