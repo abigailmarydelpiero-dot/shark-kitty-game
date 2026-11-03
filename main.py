@@ -6,12 +6,21 @@ from dialogue import DialogueBox
 dt = 0
 class Settings:
     def __init__(self):
-        self.size = self.width, self.height = 800, 600
         self.my_font = pygame.font.Font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
+        self.pointer_img = pygame.image.load("assets/images/pixilart-frames/hand2.png").convert_alpha()
+        self.hand_img = pygame.image.load("assets/images/pixilart-frames/hand1.png").convert_alpha()
+        self.sponge_img = pygame.image.load("assets/images/pixilart-frames/sponge.png").convert_alpha()
+        self.hotspot = (20, 10)
+        self.pointer_cursor = pygame.cursors.Cursor(self.hotspot, self.pointer_img)
+        self.hand_cursor = pygame.cursors.Cursor(self.hotspot, self.hand_img)
+        self.sponge_cursor = pygame.cursors.Cursor(self.hotspot, self.sponge_img)
+        self.fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
+
     def get_var(self, name: str):
         #grabs var for other script
         #none if not found
         return getattr(self, name, None)
+    
 class Sharkitty(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -126,35 +135,30 @@ class Tiles(pygame.sprite.Sprite):
         for x in range(tilesX + 1):
             for y in range(tilesY):
                 screen.blit(self.img, ((x * imageWidth - self.mvn_offset), y * imageHeight) )
-        
+
+
 pygame.init()
 
-config = Settings()
+size = width, height = 800, 600
 
 all_sprites = pygame.sprite.Group()
 
 pygame.display.set_caption('Sharkitty')
 
 black = '#282828'
-screen = pygame.display.set_mode(config.size) #non resizeable screen
+screen = pygame.display.set_mode(size) #non resizeable screen
 #screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
 clock = pygame.time.Clock()
 #pygame.event.set_grab(True)
 
 
+config = Settings()
 
-pointer_img = pygame.image.load("assets/images/pixilart-frames/hand2.png").convert_alpha()
-hand_img = pygame.image.load("assets/images/pixilart-frames/hand1.png").convert_alpha()
-sponge_img = pygame.image.load("assets/images/pixilart-frames/sponge.png").convert_alpha()
-hotspot = (20, 10)
-pointer_cursor = pygame.cursors.Cursor(hotspot, pointer_img)
-hand_cursor = pygame.cursors.Cursor(hotspot, hand_img)
-sponge_cursor = pygame.cursors.Cursor(hotspot, sponge_img)
 
-pygame.mouse.set_cursor(pointer_cursor)
 
-fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
-pygame.display.set_icon(fish_image)
+pygame.mouse.set_cursor(config.pointer_cursor)
+
+pygame.display.set_icon(config.fish_image)
 
 def render_text(text, value, color, x, y):
     text_string = f"{text}" + f"{value}" 
@@ -162,9 +166,10 @@ def render_text(text, value, color, x, y):
     screen.blit(text_display, (x, y)) 
 
 def feed_shark():
+    dialouge.render_text(":0")
     global gold        
     gold -= 1
-    print(shark.state)
+    #print(shark.state)
     if str(shark.state) != "SickState":
         shark.on_event('beingfed')
         meat = Meat(random.randint(400, 440), -200)
@@ -172,12 +177,20 @@ def feed_shark():
     
 def cure_shark():
     shark.on_event('cured')
+    dialouge.render_text(":D")
     global gold, happyness
     gold -= 10
     happyness += 10
 
 def work_shark():
-    shark.on_event('work')
+    if str(shark.state) == "WorkState":
+        shark.on_event('done_work')
+        print(str(shark.state))
+    else:
+        shark.on_event('work')
+        dialouge.render_text("...")
+
+
 
 def wash_state():
     global wash_yesno
@@ -257,8 +270,15 @@ tp.set_style_attr("font_color", text_color)
 feed_button = tp.Button("feed")
 feed_button.at_unclick = feed_shark
 
-work_button = tp.Button("work")
+work_text = tp.Text("work")
+work_button = tp.SwitchButton(False, "auto", (20,35))
+work_button.set_style_attr("bck_color", (50, 60, 60)) 
+work_button.set_style_attr("radius", work_button.rect.h//100)
+work_button.set_size((50, 20))
 work_button.at_unclick = work_shark
+work_button = tp.Box([work_text, work_button])
+work_button.sort_children("h",margins=(10, 10))
+
 
 cure_button = tp.Button("cure")
 cure_button.at_unclick = cure_shark
@@ -317,24 +337,21 @@ while True:
         shark.enter_name(event)
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                
-
-                #TEST REMOVE LATER111111111111111111111111
-
-
-
-
-                dialouge.render_text(str(random.randint(0,10000)))
-                
-                
-
-
+                pass
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 #click ig
                 pass
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_i:
+                shark.on_event("sick")
+                dialouge.render_text("X0")
+            if event.key == pygame.K_o:
+                shark.on_event("dirty")
+                dialouge.render_text(">:]")
         if wash_yesno:
             wash_shark(event)
+        
 
     if dtheme:
         tiles.img = pygame.image.load("assets/images/darkbg.png").convert()
@@ -345,7 +362,6 @@ while True:
 
     if gold <= 0 or happyness <= 0:
         sys.exit()
-    
 
     if str(shark.state) == "SickState":
         sad_timer -= 10
@@ -378,12 +394,15 @@ while True:
 
     if (random.randint(0,10000) == 1):
         shark.on_event('sick')
+        dialouge.render_text("X0")
     elif (random.randint(0,5000) == 1):
         shark.on_event('dirty')
+        dialouge.render_text(">:]")
         dirt = 50
 
     if (happyness <= 400):
         shark.on_event('sad')
+        dialouge.render_text(":[")
         sad_timer = 100
 
             
@@ -426,11 +445,11 @@ while True:
                 break
 
     if hovering_ui and not wash_yesno:
-        pygame.mouse.set_cursor(hand_cursor)
+        pygame.mouse.set_cursor(config.hand_cursor)
     elif wash_yesno:
-        pygame.mouse.set_cursor(sponge_cursor)
+        pygame.mouse.set_cursor(config.sponge_cursor)
     else:
-        pygame.mouse.set_cursor(pointer_cursor)
+        pygame.mouse.set_cursor(config.pointer_cursor)
 
 
 
