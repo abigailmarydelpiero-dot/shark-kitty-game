@@ -1,5 +1,7 @@
-This is a game inspired by a tomagachi.
+This is a game inspired by a tomagachi, ill be working on it periodically
 
-Its fully pygame and thorpy
+It's pygame and thorpy
 
-yeah this was just to sink to git easier, so nobody's seeing this :/
+python yippie
+
+yeah nobody's seeing this :/
