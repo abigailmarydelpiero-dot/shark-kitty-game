@@ -3,7 +3,4 @@ __pycache__/
 *.pyc
 .env
 .vscode/
-meliea.py
-recipeitems.json.gz
-failed_lines.txt
-import_progress.txt
+other_programs

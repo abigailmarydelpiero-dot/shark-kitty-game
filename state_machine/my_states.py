@@ -41,6 +41,8 @@ class SadState(State):
             return FoodState()
         elif event == 'sick':
             return SickState()
+        elif event == 'dirty':
+            return DirtState()
         elif event == 'work':
             return WorkState()
         return self

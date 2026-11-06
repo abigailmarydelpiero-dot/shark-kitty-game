@@ -3,18 +3,25 @@ from state_machine.my_states import SadState
 import animation.spritesheet as spritesheet
 from animation.sprite_strip_anim import SpriteStripAnim
 from dialogue import DialogueBox
+
 dt = 0
+
 class Settings:
     def __init__(self):
         self.my_font = pygame.font.Font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
         self.pointer_img = pygame.image.load("assets/images/pixilart-frames/hand2.png").convert_alpha()
         self.hand_img = pygame.image.load("assets/images/pixilart-frames/hand1.png").convert_alpha()
         self.sponge_img = pygame.image.load("assets/images/pixilart-frames/sponge.png").convert_alpha()
+        self.click_img = pygame.image.load("assets/images/pixilart-frames/click.png").convert_alpha()
         self.hotspot = (20, 10)
         self.pointer_cursor = pygame.cursors.Cursor(self.hotspot, self.pointer_img)
         self.hand_cursor = pygame.cursors.Cursor(self.hotspot, self.hand_img)
+        self.click_cursor = pygame.cursors.Cursor(self.hotspot, self.click_img)
         self.sponge_cursor = pygame.cursors.Cursor(self.hotspot, self.sponge_img)
         self.fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
+
+        #varibles
+        self.click = 0
 
     def get_var(self, name: str):
         #grabs var for other script
@@ -48,7 +55,7 @@ class Sharkitty(pygame.sprite.Sprite):
 
         #sprite box
         self.rect = self.image.get_rect()
-        self.rect.topleft = (350, 175) 
+        self.rect.topleft = (350, 200) 
         self.rect_start_pos = self.rect.topleft
     def change_animation(self, new_strip_index):
         if self.n != new_strip_index:
@@ -62,7 +69,8 @@ class Sharkitty(pygame.sprite.Sprite):
                 if event.key == pygame.K_BACKSPACE:
                     user_text = user_text[:-1]
                 elif event.key == pygame.K_RETURN:
-                    print(f"Submitted Text: {user_text}")
+                    #print(f"Submitted Text: {user_text}")
+                    dialouge.render_text(f"I'm {user_text}!")
                     self.name = user_text
                     user_text = ""
                     entering_name = False
@@ -112,6 +120,7 @@ class Meat(pygame.sprite.Sprite):
             global happyness
             happyness += 50
             shark.on_event('fed')
+            dialouge.render_text(":>")
 
 class Tiles(pygame.sprite.Sprite):
     def __init__(self):
@@ -185,7 +194,8 @@ def cure_shark():
 def work_shark():
     if str(shark.state) == "WorkState":
         shark.on_event('done_work')
-        print(str(shark.state))
+        #print(str(shark.state))
+        dialouge.render_text(":3")
     else:
         shark.on_event('work')
         dialouge.render_text("...")
@@ -231,27 +241,35 @@ def get_all_elements(element):
     return elements
 
 right_menu_xy = (200, 350)
-top_menu_xy = (200, 100)
+top_menu_xy = (250, 100)
+
+
 
 tp.set_default_font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
 
-#beginning varibles
+
+#----------------------------------------------------------------------------------
+###############################beginning varibles##################################
+#----------------------------------------------------------------------------------
+
 gold = 100
 age = 0
-happyness = 1000
+happyness = 50
 user_text = ""
 wash_yesno = False
 entering_name = False
 dtheme = False
-sad_timer = 75
+sad_timer = 50
 happy_timer = 75
 check_timer = 75
 
-
 shark = Sharkitty()
 tiles = Tiles()
-dialouge = DialogueBox("hello", 0,500)
+dialouge = DialogueBox("hello!", 580,450)
 
+#----------------------------------------------------------------------------------
+##################################################################################
+#----------------------------------------------------------------------------------
 
 #ui - thorpy
 tp.init(screen, tp.theme_text_dark)
@@ -301,8 +319,8 @@ dark_mode_btn.set_style_attr("radius", dark_mode_btn.rect.h//100)
 dark_mode_btn.set_size((50, 20))
 dark_mode_btn.at_unclick = switch_theme
 
-gold_text = tp.Text(f"gold {str(gold)}")
-happyness_text = tp.Text(f"happy {str(happyness)}")
+gold_text = tp.Text(f"gold: {str(gold)}")
+happyness_text = tp.Text(f"happiness: {str(happyness)}")
 state_text = tp.Text(str(shark.state).replace("State", ""))
 
 right_panel = tp.Box([feed_button,wash_full,work_button,cure_button,name_button])
@@ -331,6 +349,7 @@ all_sprites.add(shark)
 while True:
     events = pygame.event.get()
     mx, my = pygame.mouse.get_pos()
+    config.click -= 1
     for event in events:
         if event.type == pygame.QUIT: sys.exit()
     #print (pygame.mouse.get_focused())
@@ -340,13 +359,17 @@ while True:
                 pass
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                #click ig
-                pass
+                 if hovering_ui and not wash_yesno:
+                        config.click = 8
+                        #pygame.mouse.set_cursor(config.click_cursor)
+                        #print(click)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_i:
                 shark.on_event("sick")
                 dialouge.render_text("X0")
             if event.key == pygame.K_o:
+                dirt = 50
+                print(f"should be dirty 2: {dirt}")
                 shark.on_event("dirty")
                 dialouge.render_text(">:]")
         if wash_yesno:
@@ -371,6 +394,7 @@ while True:
     elif str(shark.state) == "SadState":
         
         sad_timer -= 1
+        print(sad_timer)
         if sad_timer <= 0:
             happyness -= 1
             sad_timer = 75
@@ -387,7 +411,7 @@ while True:
             check_timer = 75
 
     gold_text.set_text(f"gold: {str(gold)}")
-    happyness_text.set_text(f"happy: {str(happyness)}")
+    happyness_text.set_text(f"happiness: {str(happyness)}")
     state_text.set_text(str(shark.state).replace("State", ""))
     
     top_panel.sort_children("h",margins=(50, 50))
@@ -398,9 +422,10 @@ while True:
     elif (random.randint(0,5000) == 1):
         shark.on_event('dirty')
         dialouge.render_text(">:]")
+        print("should be dirty")
         dirt = 50
 
-    if (happyness <= 400):
+    if (happyness <= 400) and str(shark.state) != "SadState":
         shark.on_event('sad')
         dialouge.render_text(":[")
         sad_timer = 100
@@ -413,28 +438,22 @@ while True:
     tiles.tileBackground(screen)
     
 
-    #screen.blit(Sharkitty.image, Sharkitty.rect)
-    #screen.blit(gold_text, (100, 100)) 
-    #screen.blit(happyness_text, (100, 200)) 
-    #render_text('Gold: ', gold, (255, 255, 0), 0, 100)
-    #render_text('Happiness: ', happyness, (255, 255, 255), 0 , 150)
-    render_text('Name Input: ', user_text, (0, 255, 255), 20, 500)
 
-    #render_text('State: ', shark.state, (0, 255, 255), 0, 250)
+    #render_text('Name Input: ', user_text, (0, 255, 255), 20, 500)
+
+   #render_text('State: ', shark.state, (0, 255, 255), 0, 250)
     #render_text('', shark.name, (255, 255, 255), 600, 70)
 
-
-    
-
-
-    #updater.draw()
     all_sprites.draw(screen)
     updater.update(events=events) 
 
+
     screen.blit(dialouge.image, dialouge.rect)  
 
+    
     all_interactive_elements = get_all_elements(right_panel) + get_all_elements(top_panel)
 
+    
     for element in all_interactive_elements:
         # Verify the item has a valid coordinate boundary box
         if hasattr(element, "rect") and element.rect is not None:
@@ -444,15 +463,18 @@ while True:
                 hovering_ui = True
                 break
 
-    if hovering_ui and not wash_yesno:
+    if hovering_ui and not wash_yesno and (config.click <= 0):
         pygame.mouse.set_cursor(config.hand_cursor)
     elif wash_yesno:
         pygame.mouse.set_cursor(config.sponge_cursor)
+    elif config.click >= 0:
+        pygame.mouse.set_cursor(config.click_cursor)
+        print("click")
+       
     else:
         pygame.mouse.set_cursor(config.pointer_cursor)
-
-
-
+    if config.click <= 0:
+        config.click = 0
     pygame.display.flip()
     dt = clock.tick(60) / 1000
 

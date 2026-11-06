@@ -5,7 +5,7 @@ class DialogueBox(pygame.sprite.Sprite):
         super().__init__()
         # Create the surface for the box
         self.text = text
-        self.size = self.width, self.height = 800,100
+        self.size = self.width, self.height = 140,60
         self.image = pygame.Surface(self.size)
         self.color = (50,50,50)
         self.image.fill(self.color) # Dark gray background
