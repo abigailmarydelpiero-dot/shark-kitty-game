@@ -18,7 +18,7 @@ class Settings:
         self.hand_cursor = pygame.cursors.Cursor(self.hotspot, self.hand_img)
         self.click_cursor = pygame.cursors.Cursor(self.hotspot, self.click_img)
         self.sponge_cursor = pygame.cursors.Cursor(self.hotspot, self.sponge_img)
-        self.fish_image = pygame.image.load("/home/dalek/shark-kitty/assets/images/fish.png").convert_alpha()
+        self.fish_image = pygame.image.load("assets/images/fish.png").convert_alpha()
 
         #varibles
         self.click = 0
@@ -146,9 +146,16 @@ class Tiles(pygame.sprite.Sprite):
                 screen.blit(self.img, ((x * imageWidth - self.mvn_offset), y * imageHeight) )
 
 
+class Plant(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("assets/images/plant.png")
+        self.rect = self.image.get_rect(topleft=(x,y))
+        self.dragging = False
+
 pygame.init()
 
-size = width, height = 800, 600
+size = width, height = 1000, 600
 
 all_sprites = pygame.sprite.Group()
 
@@ -228,6 +235,9 @@ def switch_theme():
     global dtheme, now_color, wcolor, dcolor
     dtheme = not dtheme
 
+def buy_plant():
+    plant = Plant(300, 300)
+
 #for mouse pointer i think
 def get_all_elements(element):
     #flattens a UI element tree into a single list
@@ -242,7 +252,7 @@ def get_all_elements(element):
 
 right_menu_xy = (200, 350)
 top_menu_xy = (250, 100)
-
+left_menu_xy = (600, 350)
 
 
 tp.set_default_font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.ttf", 30)
@@ -252,7 +262,7 @@ tp.set_default_font("assets/fonts/Pixelify_Sans/PixelifySans-VariableFont_wght.t
 ###############################beginning varibles##################################
 #----------------------------------------------------------------------------------
 
-gold = 100
+gold = 50
 age = 0
 happyness = 50
 user_text = ""
@@ -265,6 +275,7 @@ check_timer = 75
 
 shark = Sharkitty()
 tiles = Tiles()
+plant = Plant(300, 200)
 dialouge = DialogueBox("hello!", 580,450)
 
 #----------------------------------------------------------------------------------
@@ -284,6 +295,10 @@ text_color = (213, 247, 247)
 
 tp.set_style_attr("bck_color", (box_color, "h"), None, exceptions_cls=[ tp.Text])
 tp.set_style_attr("font_color", text_color)
+
+plant_button = tp.Button("plant")
+plant_button.at_unclick = buy_plant
+
 
 feed_button = tp.Button("feed")
 feed_button.at_unclick = feed_shark
@@ -333,15 +348,19 @@ top_panel.center_on(top_menu_xy)
 top_panel.set_style_attr("radius", right_panel.rect.h//100)
 top_panel.sort_children("h",margins=(50, 50))
 
-
+left_panel = tp.Box([plant_button])
+left_panel.center_on(left_menu_xy)
+left_panel.set_style_attr("radius", left_panel.rect.h//100)
+left_panel.sort_children(margins=(20, 30))
 
 #mode none allows for costom positioning of buttons
-my_ui_elements = tp.Group([right_panel, top_panel], mode=None)
+my_ui_elements = tp.Group([right_panel, top_panel, left_panel], mode=None)
 
 updater = my_ui_elements.get_updater()
 
 
 all_sprites.add(shark)
+all_sprites.add(plant)
 
 
 
@@ -356,13 +375,21 @@ while True:
         shark.enter_name(event)
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                pass
+                if plant.rect.collidepoint(mx, my):
+                    plant.dragging = True
+                    offset_x = plant.rect.x - mx
+                    offset_y = plant.rect.y - my
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
+                 plant.dragging = False
                  if hovering_ui and not wash_yesno:
                         config.click = 8
                         #pygame.mouse.set_cursor(config.click_cursor)
                         #print(click)
+        if event.type == pygame.MOUSEMOTION:
+            if plant.dragging:
+                plant.rect.x = mx + offset_x
+                plant.rect.y = my + offset_y
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_i:
                 shark.on_event("sick")
@@ -427,7 +454,7 @@ while True:
 
     if (happyness <= 400) and str(shark.state) != "SadState":
         shark.on_event('sad')
-        dialouge.render_text(":[")
+        dialouge.render_text(":<")
         sad_timer = 100
 
             
@@ -463,11 +490,11 @@ while True:
                 hovering_ui = True
                 break
 
-    if hovering_ui and not wash_yesno and (config.click <= 0):
+    if hovering_ui and not wash_yesno and (config.click <= 0) and not plant.dragging:
         pygame.mouse.set_cursor(config.hand_cursor)
     elif wash_yesno:
         pygame.mouse.set_cursor(config.sponge_cursor)
-    elif config.click >= 0:
+    elif config.click >= 0 or plant.dragging:
         pygame.mouse.set_cursor(config.click_cursor)
         print("click")
        
